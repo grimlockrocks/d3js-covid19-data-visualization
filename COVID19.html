@@ -7,6 +7,13 @@
     <script src="https://d3js.org/d3.v5.min.js"></script>
   </head>
   <body>
+    <select id="states"></select>
+    <select id="report">
+      <option value="cases">cases</option>
+      <option value="deaths">deaths</option>
+      <option value="cases_new">cases_new</option>
+      <option value="deaths_new">deaths_new</option>
+    </select>
     <p id="desc">Total # of confirmed ? in ?</p>
     <div id="graph"></div>
     <p>Data source: <a href="https://github.com/nytimes/covid-19-data">nytimes/covid-19-data</a></p>
@@ -16,6 +23,20 @@
     const state = urlParams.has("state") ? urlParams.get("state") : "Washington";
     const report = urlParams.has("report") ? urlParams.get("report") : "cases";
     $("#desc").text("Total # of confirmed " + report + " in " + state + ":");
+    
+    const us_states = ['Alabama','Alaska','American Samoa','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Federated States of Micronesia','Florida','Georgia','Guam','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Marshall Islands','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Northern Mariana Islands','Ohio','Oklahoma','Oregon','Palau','Pennsylvania','Puerto Rico','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virgin Island','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
+    $.each(us_states, function(k, v) {
+      $("#states").append($("<option></option").val(v).text(v));  
+    });
+    $("#states").val(state);
+    $("#states").change(function() {
+      window.location = window.location.origin + window.location.pathname + "?state=" + this.value;
+    });
+    
+    $("#report").val(report);
+    $("#report").change(function() {
+      window.location = window.location.origin + window.location.pathname + "?state=" + state + "&report=" + this.value;
+    });
     
     const margin = ({top: 0, right: 20, bottom: 70, left: 60});
     const width = 1200 - margin.left - margin.right;
@@ -40,12 +61,22 @@
       .append("g")
       .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
+    let last_cases = 0;
+    let last_deaths = 0;
     d3.csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv", function(d) {
       if (state === d.state) {
+        const cases_today = parseInt(d.cases);
+        const deaths_today = parseInt(d.deaths);
+        const cases_new = cases_today - last_cases;
+        const deaths_new = deaths_today - last_deaths;
+        last_cases = cases_today;
+        last_deaths = deaths_today;
         return {
           date: d.date,
-          cases: parseInt("cases" === report ? d.cases : d.deaths),
-          deaths: parseInt(d.deaths)
+          cases: cases_today,
+          deaths: deaths_today,
+          cases_new: cases_new,
+          deaths_new: deaths_new
         };
       };
     }).then(function(data) {
@@ -53,7 +84,7 @@
           return d.date; 
         }));
       y.domain([0, d3.max(data, function(d) {
-          return d.cases;
+          return d[report];
         })]);
       svg.append("g")
         .attr("fill", "steelblue")
@@ -62,13 +93,13 @@
         .enter()
         .append("rect")
         .attr("x", function(d) { return x(d.date); })
-        .attr("y", function(d) { return y("cases" === report ? d.cases : d.deaths); })
+        .attr("y", function(d) { return y(d[report]); })
         .attr("width", x.bandwidth())
-        .attr("height", function(d) { return height - y("cases" === report ? d.cases : d.deaths); })
+        .attr("height", function(d) { return height - y(d[report]); })
         .on("mouseover", function(d, i) {
           d3.select(this).transition()
             .attr("opacity", "0.8");
-          tooltip.html("cases:" + d.cases + "<br>" + "deaths:" + d.deaths + "<br>" + d.date)
+          tooltip.html(d.date + "<br>cases:" + d.cases + "<br>deaths:" + d.deaths + "<br>cases_new:" + d.cases_new + "<br>deaths_new:" + d.deaths_new)
             .style("left", (d3.event.pageX + 20) + "px")
             .style("top", (d3.event.pageY - 20) + "px")
             .style("opacity", "1");
