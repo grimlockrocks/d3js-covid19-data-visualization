@@ -19,11 +19,14 @@
     <p>Data source: <a href="https://github.com/nytimes/covid-19-data">nytimes/covid-19-data</a></p>
   </body>
   <script>
+    // Fetch the URL query parameters and update the description text
     const urlParams = new URLSearchParams(window.location.search);
     const state = urlParams.has("state") ? urlParams.get("state") : "Washington";
     const report = urlParams.has("report") ? urlParams.get("report") : "cases";
     $("#desc").text("Total # of confirmed " + report + " in " + state + ":");
     
+    // Display all US States in the drop-down menu, upon selection, reload the page with
+    // the selected State as the query parameter
     const us_states = ['Alabama','Alaska','American Samoa','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Federated States of Micronesia','Florida','Georgia','Guam','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Marshall Islands','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Northern Mariana Islands','Ohio','Oklahoma','Oregon','Palau','Pennsylvania','Puerto Rico','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virgin Island','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
     $.each(us_states, function(k, v) {
       $("#states").append($("<option></option").val(v).text(v));  
@@ -33,15 +36,19 @@
       window.location = window.location.origin + window.location.pathname + "?state=" + this.value;
     });
     
+    // Display all report options in the drop-down menu, upon selection, reload teh page with
+    // the selected report option as the query parameter
     $("#report").val(report);
     $("#report").change(function() {
       window.location = window.location.origin + window.location.pathname + "?state=" + state + "&report=" + this.value;
     });
     
+    // Define the page dimensions for displaying the chart
     const margin = ({top: 0, right: 20, bottom: 70, left: 60});
     const width = 1200 - margin.left - margin.right;
     const height = 600 - margin.top - margin.bottom;
 
+    // Create a div as the tooltip, which will be positioned where the mouse pointer is
     let tooltip = d3.select("body").append("div")
       .style("opacity", "0")
       .style("position", "absolute")
@@ -49,18 +56,21 @@
       .style("boarder", "1px solid")
       .style("text-align", "center");
     
+    // Define x axis and y axis
     let x = d3.scaleBand()
       .range([0, width])
       .padding(0.3);
     let y = d3.scaleLinear()
       .range([height, 0]);
     
+    // Draw the chart area
     let svg = d3.select("#graph").append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
+    // Read the CSV file and generate an array of data objects
     let last_cases = 0;
     let last_deaths = 0;
     d3.csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv", function(d) {
@@ -80,12 +90,15 @@
         };
       };
     }).then(function(data) {
+      // Set the data for x axis and y axis
       x.domain(data.map(function(d) { 
           return d.date; 
         }));
       y.domain([0, d3.max(data, function(d) {
           return d[report];
         })]);
+      
+      // Draw the bars
       svg.append("g")
         .attr("fill", "steelblue")
         .selectAll("bar")
@@ -96,6 +109,7 @@
         .attr("y", function(d) { return y(d[report]); })
         .attr("width", x.bandwidth())
         .attr("height", function(d) { return height - y(d[report]); })
+        // Display the tooltip when mouse over, hide when mouse out
         .on("mouseover", function(d, i) {
           d3.select(this).transition()
             .attr("opacity", "0.8");
@@ -108,6 +122,8 @@
           d3.select(this).transition()
             .attr("opacity", "1");
         });
+      
+      // Display the label text for x axis and y axis
       svg.append("g")
         .attr("transform", `translate(0, ${height})`)
         .call(d3.axisBottom(x))
