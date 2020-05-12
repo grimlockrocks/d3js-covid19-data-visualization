@@ -20,9 +20,9 @@
   </body>
   <script>
     // Fetch the URL query parameters and update the description text
-    const urlParams = new URLSearchParams(window.location.search);
-    const state = urlParams.has("state") ? urlParams.get("state") : "Washington";
-    const report = urlParams.has("report") ? urlParams.get("report") : "cases";
+    const url_params = new URLSearchParams(window.location.search);
+    const state = url_params.has("state") ? url_params.get("state") : "Washington";
+    const report = url_params.has("report") ? url_params.get("report") : "cases";
     $("#desc").text("Total # of confirmed " + report + " in " + state + ":");
     
     // Display all US States in the drop-down menu, upon selection, reload the page with
@@ -33,7 +33,7 @@
     });
     $("#states").val(state);
     $("#states").change(function() {
-      window.location = window.location.origin + window.location.pathname + "?state=" + this.value;
+      window.location = window.location.origin + window.location.pathname + "?state=" + this.value + "&report=" + report;
     });
     
     // Display all report options in the drop-down menu, upon selection, reload teh page with
