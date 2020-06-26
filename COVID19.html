@@ -70,11 +70,18 @@
       .append("g")
       .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
+    // Only show ~100 days of data
+    var dt = new Date();
+    dt.setDate(dt.getDate() - 100);
+    
     // Read the CSV file and generate an array of data objects
     let last_cases = 0;
     let last_deaths = 0;
     d3.csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv", function(d) {
       if (state === d.state) {
+        if ((new Date(d.date)).getTime() < dt.getTime()) {
+          return;
+        }
         const cases_today = parseInt(d.cases);
         const deaths_today = parseInt(d.deaths);
         const cases_new = cases_today - last_cases;
