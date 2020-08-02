@@ -3,17 +3,35 @@
   <head>
     <meta charset="utf-8">
     <title>COVID-19 Race</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
   </head>
   <body>
+    Speed: <select id="speed">
+      <option value="fast">fast</option>
+      <option value="medium">medium</option>
+      <option value="slow">slow</option>
+    </select>
     <div id="graph"></div>
     <p>Data source: <a href="https://github.com/nytimes/covid-19-data">nytimes/covid-19-data</a></p>
   </body>
   <script>
-    
+    // Fetch the URL query parameters and update accordingly
+    const url_params = new URLSearchParams(window.location.search);
+    const speed = url_params.has("speed") ? url_params.get("speed") : "medium";
+    var duration; // Animation speed, default is 250ms
+    switch (speed) {
+      case "fast": duration = 100; break;
+      case "slow": duration = 500; break;
+      default: duration = 250; break;
+    }
+    $("#speed").val(speed);
+    $("#speed").change(function() {
+      window.location = window.location.origin + window.location.pathname + "?speed=" + this.value;
+    });
+
     const display_n = 15; // Display 15 States in the chart
     const bar_padding = 5;
-    const duration = 500; // Animation speed is 500ms
     let day_index = 0; // Start from the first day in the data
     
     // Define the page dimensions for displaying the chart
@@ -106,7 +124,6 @@
         
         // Update the bars
         let bars = svg.selectAll(".bar").data(today_data, d => d.state);
-        console.log(bars);
         bars.enter()
           .append("rect")
           .attr("x", x(0) + margin.left)
