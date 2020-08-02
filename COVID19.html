@@ -14,7 +14,7 @@
       <option value="cases_new">cases_new</option>
       <option value="deaths_new">deaths_new</option>
     </select>
-    <p id="desc">Total # of confirmed ? in ?</p>
+    <p id="desc"></p>
     <div id="graph"></div>
     <p>Data source: <a href="https://github.com/nytimes/covid-19-data">nytimes/covid-19-data</a></p>
   </body>
@@ -23,7 +23,6 @@
     const url_params = new URLSearchParams(window.location.search);
     const state = url_params.has("state") ? url_params.get("state") : "Washington";
     const report = url_params.has("report") ? url_params.get("report") : "cases";
-    $("#desc").text("Total # of confirmed " + report + " in " + state + ":");
     
     // Display all US States in the drop-down menu, upon selection, reload the page with
     // the selected State as the query parameter
@@ -79,31 +78,36 @@
     let last_deaths = 0;
     d3.csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv", function(d) {
       if (state === d.state) {
-        if ((new Date(d.date)).getTime() < dt.getTime()) {
-          return;
-        }
         const cases_today = parseInt(d.cases);
         const deaths_today = parseInt(d.deaths);
         const cases_new = cases_today - last_cases;
         const deaths_new = deaths_today - last_deaths;
         last_cases = cases_today;
         last_deaths = deaths_today;
-        return {
-          date: d.date,
-          cases: cases_today,
-          deaths: deaths_today,
-          cases_new: cases_new,
-          deaths_new: deaths_new
-        };
+        if ((new Date(d.date)).getTime() < dt.getTime()) {
+          return;
+        } else {
+          return {
+            date: d.date,
+            cases: cases_today,
+            deaths: deaths_today,
+            cases_new: cases_new,
+            deaths_new: deaths_new
+          };
+        }
       };
     }).then(function(data) {
+      // Update description
+      $("#desc").text("Total # of confirmed " + report + " in " + state + ":" 
+                      + data[data.length - 1][report] + " on " + data[data.length - 1]["date"]);
+      
       // Set the data for x axis and y axis
       x.domain(data.map(function(d) { 
-          return d.date; 
-        }));
+        return d.date; 
+      }));
       y.domain([0, d3.max(data, function(d) {
-          return d[report];
-        })]);
+        return d[report];
+      })]);
       
       // Draw the bars
       svg.append("g")
